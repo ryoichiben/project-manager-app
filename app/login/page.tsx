@@ -10,47 +10,62 @@ export default function LoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setLoading(true);
 
     try {
-        if (mode === "signup") {
-            const { error } = await supabase.auth.signUp({
-                email,
-                password,
-            });
+      /* =========================
+         SIGN UP
+      ========================= */
+      if (mode === "signup") {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+        });
 
-  if (error) {
-    alert(error.message);
-    return;
-  }
+        if (error) {
+          alert(error.message);
+          return;
+        }
 
-  // 登録完了メッセージ
-  alert(
-    "Account created. Please sign in with your email and password."
-  );
+        alert(
+          "Account created. Please sign in with your email and password."
+        );
 
-  // ★ projects に行かない
-  // ★ サインイン画面に戻す
-  setMode("signin");
-  setPassword("");
-
-  return;
-}
-      // signin
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        alert(error.message);
+        // ログイン画面に戻す
+        setMode("signin");
+        setPassword("");
         return;
       }
 
-      router.push("/projects");
+      /* =========================
+         SIGN IN
+      ========================= */
+      const { error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (signInError) {
+        alert(signInError.message);
+        return;
+      }
+
+      // ★ ここが追加ポイント
+      // 初回なら tenant を作成、既存ならそれを返す
+      const { data: tenantId, error: rpcError } =
+        await supabase.rpc("ensure_default_tenant");
+
+      if (rpcError) {
+        alert(rpcError.message);
+        return;
+      }
+
+      // テナント付きURLへ遷移
+      router.push(`/t/${tenantId}/projects`);
     } finally {
       setLoading(false);
     }
@@ -61,9 +76,11 @@ export default function LoginPage() {
       alert("Please enter your email first.");
       return;
     }
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${location.origin}/reset-password`,
     });
+
     if (error) alert(error.message);
     else alert("Password reset email sent.");
   };
@@ -79,7 +96,9 @@ export default function LoginPage() {
           <button
             onClick={() => setMode("signin")}
             className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium border ${
-              mode === "signin" ? "bg-gray-900 text-white border-gray-900" : "hover:bg-gray-50"
+              mode === "signin"
+                ? "bg-gray-900 text-white border-gray-900"
+                : "hover:bg-gray-50"
             }`}
           >
             Sign in
@@ -87,7 +106,9 @@ export default function LoginPage() {
           <button
             onClick={() => setMode("signup")}
             className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium border ${
-              mode === "signup" ? "bg-gray-900 text-white border-gray-900" : "hover:bg-gray-50"
+              mode === "signup"
+                ? "bg-gray-900 text-white border-gray-900"
+                : "hover:bg-gray-50"
             }`}
           >
             Sign up
@@ -109,7 +130,9 @@ export default function LoginPage() {
           className="w-full rounded-lg border px-3 py-2 text-sm"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
+          autoComplete={
+            mode === "signin" ? "current-password" : "new-password"
+          }
         />
 
         <button
@@ -117,7 +140,11 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
+          {loading
+            ? "Please wait..."
+            : mode === "signin"
+            ? "Sign in"
+            : "Create account"}
         </button>
 
         {mode === "signin" && (
