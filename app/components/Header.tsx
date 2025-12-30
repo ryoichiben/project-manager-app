@@ -11,16 +11,15 @@ type UserInfo = {
 
 export default function Header() {
   const router = useRouter();
-  const pathname = usePathname(); // ★ 追加
+  const pathname = usePathname(); // ← Hookは必ず呼ぶ
   const [user, setUser] = useState<UserInfo | null>(null);
 
-  // ★ ログイン画面ではヘッダー自体を出さない
-  if (pathname === "/login") {
-    return null;
-  }
-
   const refreshUser = async () => {
-    const { data } = await supabase.auth.getSession();
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("getSession error:", error);
+      return;
+    }
     const u = data.session?.user ?? null;
     setUser(u ? { id: u.id, email: u.email ?? null } : null);
   };
@@ -30,6 +29,7 @@ export default function Header() {
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
       refreshUser();
     });
+
     return () => {
       sub.subscription.unsubscribe();
     };
@@ -41,25 +41,27 @@ export default function Header() {
     router.push("/login");
   };
 
+  // ✅ Hooksの後に表示制御（ここでreturn nullはOK）
+  if (pathname === "/login") return null;
+
   return (
     <header className="mb-8 flex items-start justify-between gap-4">
       <div className="min-w-0">
         <h1 className="text-xl font-bold">Project Manager</h1>
 
-        {user && (
-          <div className="mt-1 text-xs text-gray-600 space-y-0.5">
-            <div>
-              <span className="font-medium">Email:</span>{" "}
-              {user.email ?? "—"}
-            </div>
-            <div className="truncate max-w-[520px]">
-              <span className="font-medium">Auth ID:</span>{" "}
-              {user.id}
-            </div>
+        <div className="mt-1 text-xs text-gray-600 space-y-0.5">
+          <div>
+            <span className="font-medium">Email:</span>{" "}
+            {user?.email ?? "—"}
           </div>
-        )}
+          <div className="truncate max-w-[520px]">
+            <span className="font-medium">Auth ID:</span>{" "}
+            {user?.id ?? "—"}
+          </div>
+        </div>
       </div>
 
+      {/* userがいる時だけログアウト表示 */}
       {user && (
         <button
           onClick={logout}
