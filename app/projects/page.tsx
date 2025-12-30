@@ -81,10 +81,11 @@ export default function ProjectsPage() {
         name: name.trim(),
         description: description.trim() || null,
       });
+     
       if (error) {
         console.error(error);
-        alert("Failed to create project");
-        return;
+        alert(`${error.code ?? ""} ${error.message ?? ""} ${error.details ?? ""}`.trim());
+        
       }
       closeModal();
       await loadProjects();
@@ -100,12 +101,13 @@ export default function ProjectsPage() {
         updated_at: new Date().toISOString(),
       })
       .eq("id", editingId);
+      
+      if (error) {
+        console.error(error);
+        alert(`${error.code ?? ""} ${error.message ?? ""} ${error.details ?? ""}`.trim());
+        return;
+      }
 
-    if (error) {
-      console.error(error);
-      alert("Failed to update project");
-      return;
-    }
     closeModal();
     await loadProjects();
   };
@@ -116,10 +118,11 @@ export default function ProjectsPage() {
     if (!ok) return;
 
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) {
-      console.error(error);
-      alert("Failed to delete project");
-      return;
+     
+      if (error) {
+        console.error(error);
+        alert(`${error.code ?? ""} ${error.message ?? ""} ${error.details ?? ""}`.trim());
+        
     }
     await loadProjects();
   };
