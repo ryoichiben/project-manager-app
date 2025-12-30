@@ -1,20 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 type Project = {
   id: string;
   name: string;
-  description?: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 type ModalMode = "create" | "edit";
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([
-    { id: "p1", name: "My first project", description: "Personal task management" },
-    { id: "p2", name: "Website launch", description: "Prepare and publish website" },
-  ]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<ModalMode>("create");
@@ -27,6 +28,26 @@ export default function ProjectsPage() {
     () => projects.find((p) => p.id === editingId) ?? null,
     [projects, editingId]
   );
+
+  const loadProjects = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      alert("Failed to load projects");
+    } else {
+      setProjects(data ?? []);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
 
   const closeModal = () => {
     setOpen(false);
@@ -52,40 +73,59 @@ export default function ProjectsPage() {
     setOpen(true);
   };
 
-  const upsertProject = () => {
+  const upsertProject = async () => {
     if (!name.trim()) return;
 
     if (mode === "create") {
-      setProjects((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), name: name.trim(), description: description.trim() || undefined },
-      ]);
+      const { error } = await supabase.from("projects").insert({
+        name: name.trim(),
+        description: description.trim() || null,
+      });
+      if (error) {
+        console.error(error);
+        alert("Failed to create project");
+        return;
+      }
       closeModal();
+      await loadProjects();
       return;
     }
 
-    // edit
     if (!editingId) return;
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === editingId
-          ? { ...p, name: name.trim(), description: description.trim() || undefined }
-          : p
-      )
-    );
+    const { error } = await supabase
+      .from("projects")
+      .update({
+        name: name.trim(),
+        description: description.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", editingId);
+
+    if (error) {
+      console.error(error);
+      alert("Failed to update project");
+      return;
+    }
     closeModal();
+    await loadProjects();
   };
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: string) => {
     const p = projects.find((x) => x.id === id);
     const ok = window.confirm(`Delete "${p?.name ?? "this project"}"? This cannot be undone.`);
     if (!ok) return;
-    setProjects((prev) => prev.filter((x) => x.id !== id));
+
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      alert("Failed to delete project");
+      return;
+    }
+    await loadProjects();
   };
 
   return (
     <main>
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Projects</h1>
         <button
@@ -96,8 +136,9 @@ export default function ProjectsPage() {
         </button>
       </div>
 
-      {/* Empty state */}
-      {projects.length === 0 ? (
+      {loading ? (
+        <div className="text-sm text-gray-600">Loading...</div>
+      ) : projects.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center">
           <p className="text-gray-700 font-medium">No projects yet</p>
           <p className="mt-1 text-sm text-gray-500">Create your first project to get started.</p>
@@ -111,10 +152,7 @@ export default function ProjectsPage() {
       ) : (
         <div className="grid gap-4">
           {projects.map((p) => (
-            <div
-              key={p.id}
-              className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
-            >
+            <div key={p.id} className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <h2 className="text-lg font-semibold truncate">{p.name}</h2>
@@ -143,12 +181,10 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Modal */}
       {open && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onMouseDown={(e) => {
-            // backdrop click to close
             if (e.target === e.currentTarget) closeModal();
           }}
         >
