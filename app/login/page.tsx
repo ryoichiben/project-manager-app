@@ -12,6 +12,28 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const resolveTenantSlug = async (tenantKey: string | null) => {
+    if (!tenantKey) throw new Error("tenant was not returned");
+
+    // 既に slug 形式ならそのまま使う
+    const uuidLike =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidLike.test(tenantKey)) return tenantKey;
+
+    // UUID が返ってきた場合は slug を引き直す
+    const { data, error } = await supabase
+      .from("tenants")
+      .select("slug")
+      .eq("id", tenantKey)
+      .single();
+
+    if (error || !data?.slug) {
+      throw new Error(error?.message ?? "workspace slug not found");
+    }
+
+    return data.slug;
+  };
+
   const submit = async () => {
     setLoading(true);
 
@@ -54,6 +76,8 @@ export default function LoginPage() {
         return;
       }
 
+      await supabase.auth.getSession();
+
       // ★ ここが追加ポイント
       // 初回なら tenant を作成、既存ならそれを返す
       const { data: tenantId, error: rpcError } =
@@ -64,8 +88,10 @@ export default function LoginPage() {
         return;
       }
 
+      const tenantSlug = await resolveTenantSlug(tenantId as string | null);
+
       // テナント付きURLへ遷移
-      router.push(`/t/${tenantId}/projects`);
+      router.push(`/t/${tenantSlug}/projects`);
     } finally {
       setLoading(false);
     }
