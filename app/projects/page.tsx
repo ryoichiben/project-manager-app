@@ -114,7 +114,7 @@ export default function ProjectsPage() {
 
   const deleteProject = async (id: string) => {
     const p = projects.find((x) => x.id === id);
-    const ok = window.confirm(`Delete "${p?.name ?? "this project"}"? This cannot be undone.`);
+    const ok = window.confirm(`Delete "${p?.name ?? "this project"}"? This cannot be undone`);
     if (!ok) return;
 
     const { error } = await supabase.from("projects").delete().eq("id", id);
