@@ -63,12 +63,20 @@ export default function Header() {
 
       {/* userがいる時だけログアウト表示 */}
       {user && (
-        <button
-          onClick={logout}
-          className="shrink-0 rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          Logout
-        </button>
+        <div className="shrink-0 flex items-center gap-2">
+          <button
+            onClick={() => router.push("/settings")}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Settings
+          </button>
+          <button
+            onClick={logout}
+            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Logout
+          </button>
+        </div>
       )}
     </header>
   );

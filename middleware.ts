@@ -27,8 +27,10 @@ export async function middleware(req: NextRequest) {
 
   const pathname = req.nextUrl.pathname;
 
-  // /t 配下はログイン必須
-  if (pathname.startsWith("/t") && !user) {
+  const requiresAuth =
+    pathname.startsWith("/t") || pathname.startsWith("/settings");
+
+  if (requiresAuth && !user) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
@@ -36,5 +38,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/t/:path*"],
+  matcher: ["/t/:path*", "/settings"],
 };

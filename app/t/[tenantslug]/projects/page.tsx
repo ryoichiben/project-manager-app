@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { supabase } from "../../../../lib/supabaseClient";
 
 type Project = {
@@ -17,18 +17,11 @@ export default function TenantProjectsPage() {
   // Next.js では動的セグメント名そのまま (tenantslug) がキーになる
   const { tenantslug } = useParams<{ tenantslug: string }>();
   const tenantSlug = tenantslug;
-  const router = useRouter();
 
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
 
-  /* -------------------------
-   * workspace
-   * ------------------------- */
   const [workspaceName, setWorkspaceName] = useState("");
-  const [wsLoading, setWsLoading] = useState(false);
-  const [wsEditOpen, setWsEditOpen] = useState(false);
-  const [wsNameDraft, setWsNameDraft] = useState("");
 
   /* -------------------------
    * projects
@@ -73,46 +66,6 @@ export default function TenantProjectsPage() {
 
     setTenantId(data.id);
     setWorkspaceName(data.name ?? "");
-    setWsNameDraft(data.name ?? "");
-  };
-
-  /* -------------------------
-   * workspace
-   * ------------------------- */
-  const toSlug = (value: string) => {
-    const base = value
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-    return base || `workspace-${Date.now()}`;
-  };
-
-  const saveWorkspaceName = async () => {
-    if (!tenantId) return;
-
-    const nextName = wsNameDraft.trim();
-    if (!nextName) {
-      alert("Workspace name is required.");
-      return;
-    }
-
-    const nextSlug = toSlug(nextName);
-
-    const { error } = await supabase
-      .from("tenants")
-      .update({ name: nextName, slug: nextSlug })
-      .eq("id", tenantId);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setWorkspaceName(nextName);
-    setWsEditOpen(false);
-    router.replace(`/t/${nextSlug}/projects`);
   };
 
   /* -------------------------
@@ -241,12 +194,6 @@ export default function TenantProjectsPage() {
             <span className="font-semibold">
               {workspaceName || "Untitled"}
             </span>
-            <button
-              onClick={() => setWsEditOpen(true)}
-              className="ml-2 rounded border px-2 py-1 text-xs hover:bg-gray-50"
-            >
-              Edit
-            </button>
           </div>
         </div>
 
@@ -337,35 +284,6 @@ export default function TenantProjectsPage() {
         </div>
       )}
 
-      {/* workspace modal */}
-      {wsEditOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded bg-white p-6 space-y-4">
-            <h3 className="text-lg font-bold">Edit Workspace</h3>
-
-            <input
-              className="w-full rounded border px-3 py-2"
-              value={wsNameDraft}
-              onChange={(e) => setWsNameDraft(e.target.value)}
-            />
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setWsEditOpen(false)}
-                className="rounded border px-4 py-2"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveWorkspaceName}
-                className="rounded bg-blue-600 px-4 py-2 text-white"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
