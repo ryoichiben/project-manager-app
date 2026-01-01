@@ -192,12 +192,12 @@ export default function ProjectsPage() {
           }}
         >
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-            <h2 className="text-lg font-bold mb-4">
+            <h2 className="text-lg font-bold mb-4 ">
               {mode === "create" ? "New Project" : "Edit Project"}
             </h2>
 
             {mode === "edit" && !editingProject ? (
-              <p className="text-sm text-gray-600">This project no longer exists.</p>
+              <p className="text-sm text-black">This project no longer exists.</p>
             ) : (
               <>
                 <div className="space-y-3">

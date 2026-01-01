@@ -216,7 +216,7 @@ export default function TenantProjectsPage() {
             <li key={p.id} className="rounded border bg-white p-4">
               <div className="flex justify-between">
                 <div>
-                  <div className="font-semibold">{p.name}</div>
+                  <div className="font-semibold text-black">{p.name}</div>
                   {p.description && (
                     <div className="text-sm text-gray-600">
                       {p.description}
@@ -226,7 +226,7 @@ export default function TenantProjectsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEdit(p)}
-                    className="rounded border px-2 py-1 text-sm"
+                    className="rounded border px-2 py-1 text-sm text-black"
                   >
                     Edit
                   </button>
@@ -252,14 +252,14 @@ export default function TenantProjectsPage() {
             </h3>
 
             <input
-              className="w-full rounded border px-3 py-2"
+              className="w-full rounded border border-black px-3 py-2 text-black"
               placeholder="Project name"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
 
             <textarea
-              className="w-full rounded border px-3 py-2"
+              className="w-full rounded border border-black px-3 py-2 text-black"
               placeholder="Description"
               rows={4}
               value={description}
@@ -269,13 +269,13 @@ export default function TenantProjectsPage() {
             <div className="flex justify-end gap-2">
               <button
                 onClick={closeModal}
-                className="rounded border px-4 py-2"
+                className="rounded border border-black px-4 py-2 text-black"
               >
                 Cancel
               </button>
               <button
                 onClick={upsertProject}
-                className="rounded bg-blue-600 px-4 py-2 text-white"
+                className="rounded border border-black px-4 py-2 text-black hover:bg-gray-50"
               >
                 Save
               </button>
